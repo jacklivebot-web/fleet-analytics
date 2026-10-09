@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from models import get_db, select, CRMContact, CRMDeal, Call, Vehicle, Driver, TransportOrder, SyncState
+from models import get_db, select, CRMContact, CRMDeal, Call, Vehicle, Driver, TransportOrder, SyncState, AsyncSessionLocal
 import random
 from datetime import datetime, timedelta, timezone
 
@@ -142,7 +142,8 @@ async def generate_data(db: AsyncSession = Depends(get_db)):
 
 
 @router.get("/state")
-async def sync_state(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(SyncState))
-    rows = result.scalars().all()
+async def sync_state():
+    async with AsyncSessionLocal() as db:
+        result = await db.execute(select(SyncState))
+        rows = result.scalars().all()
     return [{"source": r.source, "last_success_at": r.last_success_at} for r in rows]

@@ -43,6 +43,27 @@ docker compose up -d --build
 4. Открыть Metabase: http://localhost:3000 и подключиться к БД `fleet_analytics`
 5. Проверить API: http://localhost:8000/docs
 
+## Настройка Metabase
+
+После первого запуска выполнить:
+
+```bash
+cd app
+python scripts/setup_metabase.py
+```
+
+Логин: `admin@fleet.local`  
+Пароль: `FleetAnalytics123!`
+
+Публичный дашборд: http://localhost:3000/public/dashboard/34d8f2db-bb50-4384-adbd-be06b7497eea
+
+## Тесты
+
+```bash
+cd app
+python -m pytest tests/test_api.py -v
+```
+
 ## Структура
 
 ```
@@ -55,6 +76,10 @@ fleet-analytics/
 │   │   ├── health.py
 │   │   ├── sync.py
 │   │   └── webhooks.py
+│   ├── scripts/
+│   │   └── setup_metabase.py
+│   ├── tests/
+│   │   └── test_api.py
 │   ├── Dockerfile
 │   └── requirements.txt
 ├── docker-compose.yml
