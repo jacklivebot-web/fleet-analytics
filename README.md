@@ -119,11 +119,26 @@ fleet-analytics/
 - `repairs` — ремонты
 - `fuel_transactions` — заправки
 
-## Аналитические витрины
+## 3. Аналитические витрины
 
 - `mart_call_conversion` — конверсия звонков в сделки по месяцам
 - `mart_vehicle_efficiency` — выручка, затраты и прибыль по автомобилям
 - `mart_order_profitability` — прибыльность каждого заказа
+
+## Пояснение расчётов
+
+Все показатели и формулы доступны через API:
+
+```bash
+curl http://localhost:8000/analytics/calculations
+```
+
+Примеры:
+
+- **Конверсия звонков** = `calls_with_deal / calls * 100`, где сделка связана, если `deal_id is not null`.
+- **Прибыль автомобиля** = `sum(revenue) - sum(cost)` по всем заказам ТС.
+- **Прибыль заказа** = `revenue - cost`.
+- **Маржа заказа** = `(revenue - cost) / revenue * 100`.
 
 ## Документы
 
