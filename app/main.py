@@ -10,8 +10,10 @@ import routers.scheduler
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    # Tables are managed by Alembic migrations; create_all is disabled for production.
+    # For local/dev convenience, uncomment the next two lines if migrations are not applied.
+    # async with engine.begin() as conn:
+    #     await conn.run_sync(Base.metadata.create_all)
     yield
     await engine.dispose()
 

@@ -25,7 +25,7 @@ docker compose up -d --build
 | Метод | URL | Описание |
 |-------|-----|----------|
 | GET | `/health` | health-check |
-| POST | `/sync/generate` | сгенерировать синтетические данные |
+| POST | `/sync/generate` | сгенерировать синтетические данные (или вернуть текущие) |
 | GET | `/sync/state` | состояние синхронизации |
 | POST | `/webhooks/bitrix24` | приём событий из CRM |
 | POST | `/webhooks/uis` | приём событий телефонии |
@@ -44,30 +44,35 @@ docker compose up -d --build
 ## Быстрый старт
 
 1. Запустить стек: `docker compose up -d --build`
-2. Сгенерировать данные: `curl -X POST http://localhost:8000/sync/generate`
-3. Пересчитать витрины: `curl -X POST http://localhost:8000/analytics/recalc`
-4. Открыть Metabase: http://localhost:3000 и подключиться к БД `fleet_analytics`
-5. Проверить API: http://localhost:8000/docs
+2. Применить миграции: `cd app && docker compose exec app alembic upgrade head`
+3. Сгенерировать данные: `curl -X POST http://localhost:8000/sync/generate`
+4. Пересчитать витрины: `curl -X POST http://localhost:8000/analytics/recalc`
+5. Настроить Metabase: `cd app && docker compose exec app python scripts/setup_metabase.py`
+6. Открыть публичный дашборд (URL будет в выводе скрипта)
 
-## Настройка Metabase
-
-После первого запуска выполнить:
+## Миграции Alembic
 
 ```bash
 cd app
-python scripts/setup_metabase.py
+docker compose exec app alembic upgrade head
+docker compose exec app alembic revision --autogenerate -m "описание"
+```
+
+## Настройка Metabase
+
+```bash
+cd app
+docker compose exec app python scripts/setup_metabase.py
 ```
 
 Логин: `admin@fleet.local`  
 Пароль: `FleetAnalytics123!`
 
-Публичный дашборд: http://localhost:3000/public/dashboard/34d8f2db-bb50-4384-adbd-be06b7497eea
-
 ## Тесты
 
 ```bash
 cd app
-python -m pytest tests/test_api.py -v
+docker compose exec app python -m pytest tests/test_api.py -v
 ```
 
 ## Структура
@@ -88,8 +93,14 @@ fleet-analytics/
 │   │   └── setup_metabase.py
 │   ├── tests/
 │   │   └── test_api.py
+│   ├── migrations/
+│   │   ├── env.py
+│   │   └── versions/
 │   ├── Dockerfile
+│   ├── alembic.ini
 │   └── requirements.txt
+├── db/
+│   └── init-metabase-db.sql
 ├── docker-compose.yml
 └── README.md
 ```

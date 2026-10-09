@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from models import get_db, select, CRMContact, CRMDeal, Call, Vehicle, Driver, TransportOrder, SyncState, AsyncSessionLocal
+from models import get_db, select, CRMContact, CRMDeal, Call, Vehicle, Driver, TransportOrder, SyncState, AsyncSessionLocal, Repair, FuelTransaction
+from sqlalchemy import text
 import random
 from datetime import datetime, timedelta, timezone
 
@@ -13,7 +14,25 @@ def normalize_phone(phone: str) -> str:
     return digits
 
 @router.post("/generate")
-async def generate_data(db: AsyncSession = Depends(get_db)):
+async def generate_data(force: bool = False, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(CRMContact))
+    existing = result.scalars().first()
+    if existing and not force:
+        counts = await db.execute(text("""
+            select
+                (select count(*) from crm_contacts) as contacts,
+                (select count(*) from crm_deals) as deals,
+                (select count(*) from vehicles) as vehicles,
+                (select count(*) from drivers) as drivers,
+                (select count(*) from transport_orders) as orders,
+                (select count(*) from calls) as calls
+        """))
+        row = counts.mappings().first()
+        return dict(row)
+
+    await db.execute(text("TRUNCATE TABLE crm_contacts, crm_deals, vehicles, drivers, transport_orders, calls, repairs, fuel_transactions, sync_state RESTART IDENTITY CASCADE"))
+    await db.commit()
+
     now = datetime.now(timezone.utc)
     contacts = []
     for i in range(50):

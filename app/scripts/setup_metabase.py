@@ -1,7 +1,8 @@
 import requests
 import time
+import os
 
-BASE = "http://localhost:3000"
+BASE = os.getenv("METABASE_BASE_URL", "http://fleet_metabase:3000")
 EMAIL = "admin@fleet.local"
 PASSWORD = "FleetAnalytics123!"
 
@@ -126,13 +127,44 @@ select 'Выданы', count(distinct o.deal_id) from transport_orders o where o
         },
     ]
 
+    # Find or create database connection
+    databases = requests.get(f"{BASE}/api/database", headers=headers).json().get("data", [])
+    db_conn = next((d for d in databases if d["name"] == "Fleet Analytics DB"), None)
+    if db_conn:
+        database_id = db_conn["id"]
+    else:
+        payload = {
+            "engine": "postgres",
+            "name": "Fleet Analytics DB",
+            "details": {
+                "host": "db",
+                "port": 5432,
+                "dbname": "fleet_analytics",
+                "user": "fleet",
+                "password": "fleet",
+                "schema-filters-type": "all",
+                "ssl": False,
+                "tunnel-enabled": False,
+            },
+            "auto_run_queries": True,
+            "is_full_sync": True,
+            "is_on_demand": False,
+        }
+        r = requests.post(f"{BASE}/api/database", headers=headers, json=payload)
+        database_id = r.json()["id"]
+
+    # Sync schema
+    requests.post(f"{BASE}/api/database/{database_id}/sync", headers=headers)
+    requests.post(f"{BASE}/api/database/{database_id}/rescan_values", headers=headers)
+    time.sleep(2)
+
     cards = []
     for q in questions:
         payload = {
             "name": q["name"],
             "collection_id": collection_id,
             "dataset_query": {
-                "database": 2,
+                "database": database_id,
                 "type": "native",
                 "native": {"query": q["sql"]},
             },
