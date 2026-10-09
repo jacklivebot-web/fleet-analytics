@@ -125,6 +125,84 @@ select 'Выданы', count(distinct o.deal_id) from transport_orders o where o
             "display": "bar",
             "viz": {"graph.dimensions": ["model"], "graph.metrics": ["profit"]},
         },
+        {
+            "name": "Конверсия по этапам воронки",
+            "sql": "select stage_id, count(*) as value from crm_deals group by 1 order by 1",
+            "display": "bar",
+            "viz": {"graph.dimensions": ["stage_id"], "graph.metrics": ["value"]},
+        },
+        {
+            "name": "Выручка по месяцам",
+            "sql": "select date_trunc('month', planned_start)::text as month, sum(revenue) as revenue from transport_orders group by 1 order by 1",
+            "display": "line",
+            "viz": {"graph.dimensions": ["month"], "graph.metrics": ["revenue"]},
+        },
+        {
+            "name": "Распределение длительности звонков",
+            "sql": "select duration_sec from calls",
+            "display": "histogram",
+            "viz": {},
+        },
+        {
+            "name": "Топ 10 убыточных заказов",
+            "sql": "select order_id, route_name, profit from mart_order_profitability where profit < 0 order by profit asc limit 10",
+            "display": "table",
+            "viz": {},
+        },
+        {
+            "name": "Средняя прибыль на заказ по моделям",
+            "sql": "select v.model, avg(o.revenue - o.cost) as avg_profit from vehicles v left join transport_orders o on o.vehicle_id=v.id group by 1 order by avg_profit desc",
+            "display": "bar",
+            "viz": {"graph.dimensions": ["model"], "graph.metrics": ["avg_profit"]},
+        },
+        {
+            "name": "Заказы по статусам",
+            "sql": "select status, count(*) as count from transport_orders group by 1",
+            "display": "pie",
+            "viz": {},
+        },
+        {
+            "name": "Распределение прибыли заказов",
+            "sql": "select margin_percent from mart_order_profitability",
+            "display": "histogram",
+            "viz": {},
+        },
+        {
+            "name": "Тренд количества заказов по месяцам",
+            "sql": "select date_trunc('month', planned_start)::text as month, count(*) as orders from transport_orders group by 1 order by 1",
+            "display": "line",
+            "viz": {"graph.dimensions": ["month"], "graph.metrics": ["orders"]},
+        },
+        {
+            "name": "Простой автомобилей (дни)",
+            "sql": "select plate, model, downtime_days, repair_cost from mart_vehicle_downtime order by downtime_days desc limit 10",
+            "display": "bar",
+            "viz": {"graph.dimensions": ["plate"], "graph.metrics": ["downtime_days"]},
+        },
+        {
+            "name": "Средний расход топлива по моделям",
+            "sql": "select model, avg(liters_per_100km) as avg_consumption from mart_vehicle_fuel_efficiency group by 1 order by avg_consumption desc",
+            "display": "bar",
+            "viz": {"graph.dimensions": ["model"], "graph.metrics": ["avg_consumption"]},
+        },
+        {
+            "name": "Топ клиентов по LTV",
+            "sql": "select name, phone_normalized, ltv, orders_count from mart_customer_ltv order by ltv desc limit 10",
+            "display": "table",
+            "viz": {},
+        },
+        {
+            "name": "Количество заправок по автомобилям",
+            "sql": "select plate, refuels_count, total_liters from mart_vehicle_fuel_efficiency order by refuels_count desc limit 10",
+            "display": "bar",
+            "viz": {"graph.dimensions": ["plate"], "graph.metrics": ["refuels_count"]},
+        },
+        {
+            "name": "Суммарные затраты на ремонт по моделям",
+            "sql": "select v.model, sum(r.cost) as total_repair_cost from repairs r join vehicles v on v.id=r.vehicle_id group by 1 order by total_repair_cost desc",
+            "display": "bar",
+            "viz": {"graph.dimensions": ["model"], "graph.metrics": ["total_repair_cost"]},
+        },
     ]
 
     # Find or create database connection
@@ -185,36 +263,30 @@ select 'Выданы', count(distinct o.deal_id) from transport_orders o where o
     )
     dashboard_id = r.json()["id"]
 
-    # Add cards
+    # Add cards via PUT /api/dashboard/:id with dashcards list (Metabase v0.63)
     dashboard_cards = []
-    positions = [
-        (0, 0, 12, 8),    # Прибыльность автомобилей
-        (0, 12, 12, 8),   # Конверсия звонков
-        (8, 0, 24, 10),   # Прибыльность заказов
-        (18, 0, 12, 8),   # Воронка продаж
-        (18, 12, 12, 8),  # Загрузка по статусам
-        (26, 0, 12, 8),   # Длительность звонков
-        (26, 12, 12, 8),  # Пропущенные звонки
-        (34, 0, 12, 8),   # Доходность по моделям
-    ]
-    for card_id, (row, col, sx, sy) in zip(cards, positions):
+    for i, card_id in enumerate(cards):
         dashboard_cards.append(
             {
-                "id": card_id,
+                "id": -i - 1,
                 "card_id": card_id,
-                "row": row,
-                "col": col,
-                "size_x": sx,
-                "size_y": sy,
+                "dashboard_id": dashboard_id,
+                "row": (i // 2) * 4,
+                "col": (i % 2) * 8,
+                "size_x": 12 if questions[i]["display"] == "table" else 8,
+                "size_y": 8 if questions[i]["display"] == "table" else 4,
                 "series": [],
                 "parameter_mappings": [],
+                "visualization_settings": {},
+                "dashboard_tab_id": None,
+                "action_id": None,
             }
         )
 
     r = requests.put(
-        f"{BASE}/api/dashboard/{dashboard_id}/cards",
+        f"{BASE}/api/dashboard/{dashboard_id}",
         headers=headers,
-        json={"cards": dashboard_cards},
+        json={"dashcards": dashboard_cards},
     )
     if r.status_code != 200:
         print("Dashboard cards update failed:", r.status_code, r.text[:300])

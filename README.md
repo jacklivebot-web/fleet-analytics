@@ -32,9 +32,13 @@ docker compose up -d --build
 | POST | `/webhooks/uis` | приём событий телефонии |
 | POST | `/webhooks/1c` | приём событий 1С |
 | POST | `/analytics/recalc` | пересчитать аналитические витрины |
+| GET | `/analytics/calculations` | формулы расчёта всех показателей |
 | GET | `/analytics/call-conversion` | витрина конверсии звонков |
 | GET | `/analytics/vehicle-efficiency` | витрина эффективности автомобилей |
 | GET | `/analytics/order-profitability` | витрина прибыльности заказов |
+| GET | `/analytics/vehicle-downtime` | витрина простоя и ремонтов ТС |
+| GET | `/analytics/vehicle-fuel-efficiency` | витрина расхода топлива |
+| GET | `/analytics/customer-ltv` | витрина LTV клиентов |
 | GET | `/mock/bitrix/deals` | mock данные сделок |
 | GET | `/mock/bitrix/contacts` | mock данные контактов |
 | GET | `/mock/uis/calls` | mock данные звонков |
@@ -97,6 +101,8 @@ fleet-analytics/
 │   ├── migrations/
 │   │   ├── env.py
 │   │   └── versions/
+│   ├── tasks.py
+│   ├── celeryconfig.py
 │   ├── Dockerfile
 │   ├── alembic.ini
 │   └── requirements.txt
@@ -105,7 +111,9 @@ fleet-analytics/
 ├── docker-compose.yml
 ├── README.md
 ├── CASES.md
-└── PORTFOLIO.md
+├── PORTFOLIO.md
+├── DATA_DICTIONARY.md
+└── .gitignore
 ```
 
 ## Сущности

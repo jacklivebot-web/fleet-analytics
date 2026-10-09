@@ -109,6 +109,45 @@ def test_analytics_order_profitability():
         assert "margin_percent" in data[0]
 
 
+def test_analytics_vehicle_downtime():
+    response = requests.get(f"{BASE_URL}/analytics/vehicle-downtime")
+    assert response.status_code == 200
+    data = response.json()
+    assert isinstance(data, list)
+    if data:
+        assert "downtime_days" in data[0]
+
+
+def test_analytics_vehicle_fuel_efficiency():
+    response = requests.get(f"{BASE_URL}/analytics/vehicle-fuel-efficiency")
+    assert response.status_code == 200
+    data = response.json()
+    assert isinstance(data, list)
+    if data:
+        assert "liters_per_100km" in data[0]
+
+
+def test_analytics_customer_ltv():
+    response = requests.get(f"{BASE_URL}/analytics/customer-ltv")
+    assert response.status_code == 200
+    data = response.json()
+    assert isinstance(data, list)
+    if data:
+        assert "ltv" in data[0]
+
+
+def test_analytics_calculations():
+    response = requests.get(f"{BASE_URL}/analytics/calculations")
+    assert response.status_code == 200
+    data = response.json()
+    assert "call_conversion" in data
+    assert "vehicle_efficiency" in data
+    assert "order_profitability" in data
+    assert "vehicle_downtime" in data
+    assert "vehicle_fuel_efficiency" in data
+    assert "customer_ltv" in data
+
+
 def test_mock_bitrix_deals():
     response = requests.get(f"{BASE_URL}/mock/bitrix/deals")
     assert response.status_code == 200

@@ -48,6 +48,40 @@ services:
         condition: service_healthy
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
+  celery_worker:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    container_name: fleet_celery_worker
+    environment:
+      DATABASE_URL: postgresql+asyncpg://fleet:fleet@db:5432/fleet_analytics
+      REDIS_URL: redis://redis:6379/0
+      SECRET_TOKEN: demo-token-change-in-prod
+      FLEET_API_URL: http://app:8000
+    volumes:
+      - ./app:/app
+    depends_on:
+      - app
+      - redis
+    command: celery -A tasks worker --loglevel=info
+
+  celery_beat:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    container_name: fleet_celery_beat
+    environment:
+      DATABASE_URL: postgresql+asyncpg://fleet:fleet@db:5432/fleet_analytics
+      REDIS_URL: redis://redis:6379/0
+      SECRET_TOKEN: demo-token-change-in-prod
+      FLEET_API_URL: http://app:8000
+    volumes:
+      - ./app:/app
+    depends_on:
+      - app
+      - redis
+    command: celery -A tasks beat --loglevel=info
+
   metabase:
     image: metabase/metabase:latest
     container_name: fleet_metabase

@@ -98,6 +98,39 @@ async def generate_data(force: bool = False, db: AsyncSession = Depends(get_db))
     vehicle_ids = [v.id for v in vehicles]
     driver_ids = [d.id for d in drivers]
 
+    # Generate repairs and fuel transactions
+    repairs = []
+    for i in range(60):
+        vehicle = random.choice(vehicles)
+        start = now - timedelta(days=random.randint(1, 365))
+        end = start + timedelta(days=random.randint(1, 14))
+        repairs.append(Repair(
+            id=i+1,
+            vehicle_id=vehicle.id,
+            started_at=start,
+            ended_at=end,
+            cost=random.randint(1000, 50000),
+            description=random.choice(["ТО", "Ремонт двигателя", "Замена шин", "Кузовной ремонт"])
+        ))
+    db.add_all(repairs)
+
+    fuel_transactions = []
+    for i in range(200):
+        vehicle = random.choice(vehicles)
+        driver = random.choice(drivers)
+        odometer = random.randint(50000, 300000)
+        liters = round(random.uniform(30, 300), 2)
+        fuel_transactions.append(FuelTransaction(
+            id=i+1,
+            vehicle_id=vehicle.id,
+            driver_id=driver.id,
+            liters=liters,
+            cost=round(liters * random.uniform(45, 60), 2),
+            odometer_km=odometer,
+            created_at=now - timedelta(days=random.randint(1, 365))
+        ))
+    db.add_all(fuel_transactions)
+
     orders = []
     for i in range(80):
         deal = deals[i % len(deals)]
@@ -156,7 +189,9 @@ async def generate_data(force: bool = False, db: AsyncSession = Depends(get_db))
         "vehicles": len(vehicles),
         "drivers": len(drivers),
         "orders": len(orders),
-        "calls": len(calls)
+        "calls": len(calls),
+        "repairs": len(repairs),
+        "fuel_transactions": len(fuel_transactions),
     }
 
 
