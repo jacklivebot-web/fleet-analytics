@@ -87,7 +87,7 @@ margin_percent = profit / revenue * 100
 
 ## Скриншоты
 
-Открыть дашборд локально: http://localhost:3000/public/dashboard/8403a20a-d24e-45f0-85b8-b5aef11ecd30
+Открыть дашборд локально: http://localhost:3000/public/dashboard/801cf3fa-dcfd-4294-ab77-63aca19ea6f6
 
 ## Как запустить для демонстрации
 
@@ -100,4 +100,4 @@ docker compose exec app python scripts/setup_metabase.py
 ```
 
 API: http://localhost:8000/docs  
-Dashboard: http://localhost:3000/public/dashboard/8403a20a-d24e-45f0-85b8-b5aef11ecd30
+Dashboard: http://localhost:3000/public/dashboard/801cf3fa-dcfd-4294-ab77-63aca19ea6f6
