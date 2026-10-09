@@ -181,3 +181,14 @@ def test_scheduler_all():
     data = response.json()
     assert "scheduled" in data
     assert len(data["scheduled"]) == 3
+
+
+def test_data_quality():
+    response = requests.get(f"{BASE_URL}/data-quality/")
+    assert response.status_code == 200
+    data = response.json()
+    assert "overall" in data
+    assert "checks" in data
+    assert isinstance(data["checks"], dict)
+    assert "duplicate_contacts_by_phone" in data["checks"]
+    assert "won_deals_without_order" in data["checks"]

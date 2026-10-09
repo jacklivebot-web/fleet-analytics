@@ -7,6 +7,7 @@ import routers.health
 import routers.analytics
 import routers.mock_services
 import routers.scheduler
+import routers.data_quality
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -25,3 +26,4 @@ app.include_router(routers.sync.router, prefix="/sync")
 app.include_router(routers.analytics.router, prefix="/analytics")
 app.include_router(routers.mock_services.router, prefix="/mock")
 app.include_router(routers.scheduler.router, prefix="/scheduler")
+app.include_router(routers.data_quality.router, prefix="/data-quality")

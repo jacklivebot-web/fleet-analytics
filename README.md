@@ -45,6 +45,7 @@ docker compose up -d --build
 | GET | `/mock/1c/vehicles` | mock данные автомобилей |
 | GET | `/mock/1c/orders` | mock данные заказов |
 | POST | `/scheduler/all` | запуск синхронизации всех источников |
+| GET | `/data-quality/` | проверка качества данных: дубли, пропуски, аномалии |
 
 ## Быстрый старт
 
@@ -89,6 +90,7 @@ fleet-analytics/
 │   ├── models.py
 │   ├── routers/
 │   │   ├── analytics.py
+│   │   ├── data_quality.py
 │   │   ├── health.py
 │   │   ├── mock_services.py
 │   │   ├── scheduler.py
@@ -132,6 +134,27 @@ fleet-analytics/
 - `mart_call_conversion` — конверсия звонков в сделки по месяцам
 - `mart_vehicle_efficiency` — выручка, затраты и прибыль по автомобилям
 - `mart_order_profitability` — прибыльность каждого заказа
+- `mart_vehicle_downtime` — дни простоя и ремонты по автомобилям
+- `mart_vehicle_fuel_efficiency` — расход топлива по заправкам
+- `mart_customer_ltv` — пожизненная ценность клиента
+
+## Проверка качества данных
+
+Эндпоинт `GET /data-quality/` возвращает сводку по дублям, пропускам, аномалиям и связям между системами. Примеры проверок:
+
+- дубли контактов по телефону;
+- звонки без привязки к сделке/контакту;
+- заказы без ТС или водителя;
+- отрицательная выручка/затраты;
+- аномальный расход топлива;
+- выигранные сделки без выданного автомобиля;
+- ремонты с отрицательной длительностью.
+
+Пример вызова:
+
+```bash
+curl http://localhost:8000/data-quality/
+```
 
 ## Пояснение расчётов
 
@@ -152,4 +175,5 @@ curl http://localhost:8000/analytics/calculations
 
 - `CASES.md` — разбор задач из вакансии
 - `PORTFOLIO.md` — краткое кейс-стадио для портфолио
+- `DATA_DICTIONARY.md` — описание таблиц и полей БД
 
