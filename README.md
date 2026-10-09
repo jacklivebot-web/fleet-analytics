@@ -9,6 +9,7 @@
 - Redis 7
 - Metabase
 - Docker Compose
+- Alembic
 
 ## Запуск
 
@@ -102,7 +103,9 @@ fleet-analytics/
 ├── db/
 │   └── init-metabase-db.sql
 ├── docker-compose.yml
-└── README.md
+├── README.md
+├── CASES.md
+└── PORTFOLIO.md
 ```
 
 ## Сущности
@@ -121,3 +124,9 @@ fleet-analytics/
 - `mart_call_conversion` — конверсия звонков в сделки по месяцам
 - `mart_vehicle_efficiency` — выручка, затраты и прибыль по автомобилям
 - `mart_order_profitability` — прибыльность каждого заказа
+
+## Документы
+
+- `CASES.md` — разбор задач из вакансии
+- `PORTFOLIO.md` — краткое кейс-стадио для портфолио
+
