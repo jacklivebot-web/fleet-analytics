@@ -34,6 +34,12 @@ docker compose up -d --build
 | GET | `/analytics/call-conversion` | витрина конверсии звонков |
 | GET | `/analytics/vehicle-efficiency` | витрина эффективности автомобилей |
 | GET | `/analytics/order-profitability` | витрина прибыльности заказов |
+| GET | `/mock/bitrix/deals` | mock данные сделок |
+| GET | `/mock/bitrix/contacts` | mock данные контактов |
+| GET | `/mock/uis/calls` | mock данные звонков |
+| GET | `/mock/1c/vehicles` | mock данные автомобилей |
+| GET | `/mock/1c/orders` | mock данные заказов |
+| POST | `/scheduler/all` | запуск синхронизации всех источников |
 
 ## Быстрый старт
 
@@ -74,6 +80,8 @@ fleet-analytics/
 │   ├── routers/
 │   │   ├── analytics.py
 │   │   ├── health.py
+│   │   ├── mock_services.py
+│   │   ├── scheduler.py
 │   │   ├── sync.py
 │   │   └── webhooks.py
 │   ├── scripts/

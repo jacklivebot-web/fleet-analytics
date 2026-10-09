@@ -9,19 +9,19 @@ def test_health():
 
 def test_webhook_bitrix24():
     payload = {"event": "ONCRMDEALUPDATE", "data": {"FIELDS": {"ID": "123"}}}
-    response = requests.post(f"{BASE_URL}/webhooks/bitrix24", json=payload)
+    response = requests.post(f"{BASE_URL}/webhooks/bitrix24", json=payload, headers={"X-Secret-Token": "demo-token-change-in-prod"})
     assert response.status_code == 200
     assert response.json()["ok"] is True
 
 def test_webhook_uis():
     payload = {"event": "call_finished", "call_id": "call-test", "phone": "+79990000000"}
-    response = requests.post(f"{BASE_URL}/webhooks/uis", json=payload)
+    response = requests.post(f"{BASE_URL}/webhooks/uis", json=payload, headers={"X-Secret-Token": "demo-token-change-in-prod"})
     assert response.status_code == 200
     assert response.json()["ok"] is True
 
 def test_webhook_1c():
     payload = {"event": "order_updated", "order_id": "order-1"}
-    response = requests.post(f"{BASE_URL}/webhooks/1c", json=payload)
+    response = requests.post(f"{BASE_URL}/webhooks/1c", json=payload, headers={"X-Secret-Token": "demo-token-change-in-prod"})
     assert response.status_code == 200
     assert response.json()["ok"] is True
 

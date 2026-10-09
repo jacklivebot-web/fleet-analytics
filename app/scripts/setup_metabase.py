@@ -69,7 +69,6 @@ def create_dashboard(token):
     collection_id = r.json().get("id", 5)
 
     # Cards
-    cards = []
     questions = [
         {
             "name": "Прибыльность автомобилей",
@@ -89,8 +88,45 @@ def create_dashboard(token):
             "display": "table",
             "viz": {},
         },
+        {
+            "name": "Воронка продаж",
+            "sql": """
+select 'Заявки' as stage, count(distinct d.id) as value from crm_deals d
+union all
+select 'Со звонком', count(distinct c.deal_id) from calls c where c.status = 'answered'
+union all
+select 'Выданы', count(distinct o.deal_id) from transport_orders o where o.status = 'completed'
+            """,
+            "display": "funnel",
+            "viz": {},
+        },
+        {
+            "name": "Загрузка автопарка по статусам",
+            "sql": "select status, count(*) as count from vehicles group by 1",
+            "display": "pie",
+            "viz": {},
+        },
+        {
+            "name": "Средняя длительность звонка по операторам",
+            "sql": "select employee_id, avg(duration_sec) as avg_duration, count(*) as calls from calls group by 1 order by 2 desc",
+            "display": "bar",
+            "viz": {"graph.dimensions": ["employee_id"], "graph.metrics": ["avg_duration"]},
+        },
+        {
+            "name": "Пропущенные звонки по месяцам",
+            "sql": "select date_trunc('month', started_at)::text as month, count(*) from calls where status='missed' group by 1 order by 1",
+            "display": "line",
+            "viz": {"graph.dimensions": ["month"], "graph.metrics": ["count"]},
+        },
+        {
+            "name": "Доходность по моделям",
+            "sql": "select v.model, sum(o.revenue) as revenue, sum(o.cost) as cost, sum(o.revenue - o.cost) as profit from vehicles v left join transport_orders o on o.vehicle_id=v.id group by 1 order by profit desc",
+            "display": "bar",
+            "viz": {"graph.dimensions": ["model"], "graph.metrics": ["profit"]},
+        },
     ]
 
+    cards = []
     for q in questions:
         payload = {
             "name": q["name"],
@@ -106,6 +142,8 @@ def create_dashboard(token):
         r = requests.post(f"{BASE}/api/card", headers=headers, json=payload)
         if r.status_code == 200:
             cards.append(r.json()["id"])
+        else:
+            print(f"Failed to create card {q['name']}:", r.status_code, r.text[:200])
 
     # Dashboard
     r = requests.post(
@@ -117,7 +155,16 @@ def create_dashboard(token):
 
     # Add cards
     dashboard_cards = []
-    positions = [(0, 0, 12, 8), (0, 12, 12, 8), (8, 0, 24, 10)]
+    positions = [
+        (0, 0, 12, 8),    # Прибыльность автомобилей
+        (0, 12, 12, 8),   # Конверсия звонков
+        (8, 0, 24, 10),   # Прибыльность заказов
+        (18, 0, 12, 8),   # Воронка продаж
+        (18, 12, 12, 8),  # Загрузка по статусам
+        (26, 0, 12, 8),   # Длительность звонков
+        (26, 12, 12, 8),  # Пропущенные звонки
+        (34, 0, 12, 8),   # Доходность по моделям
+    ]
     for card_id, (row, col, sx, sy) in zip(cards, positions):
         dashboard_cards.append(
             {
@@ -137,6 +184,8 @@ def create_dashboard(token):
         headers=headers,
         json={"cards": dashboard_cards},
     )
+    if r.status_code != 200:
+        print("Dashboard cards update failed:", r.status_code, r.text[:300])
 
     # Public link
     r = requests.post(f"{BASE}/api/dashboard/{dashboard_id}/public_link", headers=headers)
