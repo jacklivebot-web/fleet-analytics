@@ -10,3 +10,6 @@ venv/
 .vscode/
 *.log
 postgres_data/
+celerybeat-schedule
+celerybeat-schedule.db
+.DS_Store
