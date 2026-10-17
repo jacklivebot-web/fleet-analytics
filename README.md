@@ -63,6 +63,8 @@ docker compose exec app python scripts/setup_metabase.py
 
 Публичная ссылка на дашборд появится в консоли. Можно сразу скидывать HR или интервьюеру.
 
+Пример публичного дашборда (локальный запуск): http://localhost:3000/public/dashboard/764fac8d-e9c3-4ce9-a8a5-d771ffc48ac8
+
 ## Эндпоинты MVP
 
 | Метод | URL | Что делает |
