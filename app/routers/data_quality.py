@@ -1,3 +1,13 @@
+"""
+Роутер проверки качества данных.
+
+Выполняет 13 автоматических проверок, которые находят дубли,
+пропуски, аномалии и расхождения между CRM, телефонией и данными парка.
+
+Эндпоинт используется для быстрой диагностики: перед отчётом проверяем,
+нет ли грязи, которая сломает цифры.
+"""
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
@@ -8,8 +18,15 @@ router = APIRouter()
 
 @router.get("/")
 async def data_quality(db: AsyncSession = Depends(get_db)):
-    """Проверяет качество данных: дубли, пропуски, аномалии, связи между системами."""
+    """
+    Возвращает сводку качества данных с общей оценкой overall.
 
+    Severity:
+    - error: критичная проблема, требует исправления;
+    - warning: подозрительные данные, стоит проверить;
+    - info: наблюдение, не обязательно проблема;
+    - ok: всё хорошо.
+    """
     checks = {}
 
     # 1. Дубли контактов по телефону
@@ -113,7 +130,7 @@ async def data_quality(db: AsyncSession = Depends(get_db)):
         "severity": "info",
     }
 
-    # 9. Аномальный расход топлива: > 100 л/100 км или литры меньше стоимости/100
+    # 9. Аномальный расход топлива
     r = await db.execute(text("""
         select vehicle_id, plate, liters_per_100km
         from mart_vehicle_fuel_efficiency
@@ -127,12 +144,16 @@ async def data_quality(db: AsyncSession = Depends(get_db)):
         "severity": "warning" if rows else "ok",
     }
 
-    # 10. Пропущенные звонки — доля
+    # 10. Доля пропущенных звонков
     r = await db.execute(text("""
         select
             count(*) filter (where status = 'missed') as missed,
             count(*) as total,
-            round(count(*) filter (where status = 'missed')::numeric / nullif(count(*), 0) * 100, 2) as missed_percent
+            round(
+                count(*) filter (where status = 'missed')::numeric
+                / nullif(count(*), 0) * 100,
+                2
+            ) as missed_percent
         from calls
     """))
     row = dict(r.mappings().first())
@@ -142,7 +163,7 @@ async def data_quality(db: AsyncSession = Depends(get_db)):
         "severity": "warning" if (row.get("missed_percent") or 0) > 50 else "ok",
     }
 
-    # 10.1 Звонки с длительностью больше 2 часов или меньше 0
+    # 11. Аномальная длительность звонков
     r = await db.execute(text("""
         select count(*) as cnt from calls
         where duration_sec > 7200 or duration_sec < 0
@@ -154,7 +175,7 @@ async def data_quality(db: AsyncSession = Depends(get_db)):
         "severity": "warning" if cnt > 0 else "ok",
     }
 
-    # 11. Сделки в статусе won без выданного заказа
+    # 12. Выигранные сделки без выданного заказа
     r = await db.execute(text("""
         select count(*) as cnt from crm_deals d
         where d.stage_id = 'won'
@@ -167,7 +188,7 @@ async def data_quality(db: AsyncSession = Depends(get_db)):
         "severity": "warning" if cnt > 0 else "ok",
     }
 
-    # 12. Длительность ремонта: ended_at < started_at
+    # 13. Ремонты с отрицательной длительностью
     r = await db.execute(text("""
         select count(*) as cnt from repairs
         where ended_at < started_at

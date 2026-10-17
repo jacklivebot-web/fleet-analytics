@@ -1,3 +1,10 @@
+"""
+Модели SQLAlchemy и подключение к БД.
+
+Здесь собраны все ORM-модели проекта: сырые события, CRM, телефония,
+парк и операционные таблицы. Alembic использует эти модели для генерации миграций.
+"""
+
 from sqlalchemy import (
     Column, Integer, String, BigInteger, Numeric, DateTime, Text, JSON,
     ForeignKey, UniqueConstraint
@@ -19,12 +26,15 @@ AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=F
 Base = declarative_base()
 select = _select
 
+
 async def get_db():
+    """Асинхронная зависимость FastAPI для получения сессии БД."""
     async with AsyncSessionLocal() as session:
         yield session
 
 
 class SyncState(Base):
+    """Состояние синхронизации с внешними системами."""
     __tablename__ = "sync_state"
     id = Column(Integer, primary_key=True)
     source = Column(String, unique=True, nullable=False)
@@ -33,6 +43,7 @@ class SyncState(Base):
 
 
 class RawEvent(Base):
+    """Сырые события из webhook-ов всех источников."""
     __tablename__ = "raw_events"
     id = Column(BigInteger, primary_key=True)
     source = Column(String, nullable=False, index=True)
@@ -42,6 +53,7 @@ class RawEvent(Base):
 
 
 class CRMContact(Base):
+    """Контакты из Битрикс24."""
     __tablename__ = "crm_contacts"
     id = Column(BigInteger, primary_key=True)
     bitrix_id = Column(BigInteger, unique=True)
@@ -53,6 +65,7 @@ class CRMContact(Base):
 
 
 class CRMDeal(Base):
+    """Сделки из Битрикс24."""
     __tablename__ = "crm_deals"
     id = Column(BigInteger, primary_key=True)
     bitrix_id = Column(BigInteger, unique=True)
@@ -69,6 +82,7 @@ class CRMDeal(Base):
 
 
 class Call(Base):
+    """Звонки из UIS."""
     __tablename__ = "calls"
     id = Column(BigInteger, primary_key=True)
     provider = Column(String, nullable=False)
@@ -94,6 +108,7 @@ class Call(Base):
 
 
 class Vehicle(Base):
+    """Автомобили из 1С."""
     __tablename__ = "vehicles"
     id = Column(BigInteger, primary_key=True)
     plate = Column(String, unique=True)
@@ -103,6 +118,7 @@ class Vehicle(Base):
 
 
 class Driver(Base):
+    """Водители."""
     __tablename__ = "drivers"
     id = Column(BigInteger, primary_key=True)
     name = Column(String)
@@ -111,6 +127,7 @@ class Driver(Base):
 
 
 class TransportOrder(Base):
+    """Заказы на перевозку / выдачи автомобилей."""
     __tablename__ = "transport_orders"
     id = Column(BigInteger, primary_key=True)
     deal_id = Column(BigInteger, ForeignKey("crm_deals.id"), nullable=True)
@@ -125,6 +142,7 @@ class TransportOrder(Base):
 
 
 class Repair(Base):
+    """Ремонты транспортных средств."""
     __tablename__ = "repairs"
     id = Column(BigInteger, primary_key=True)
     vehicle_id = Column(BigInteger, ForeignKey("vehicles.id"))
@@ -135,6 +153,7 @@ class Repair(Base):
 
 
 class FuelTransaction(Base):
+    """Заправки топлива."""
     __tablename__ = "fuel_transactions"
     id = Column(BigInteger, primary_key=True)
     vehicle_id = Column(BigInteger, ForeignKey("vehicles.id"))

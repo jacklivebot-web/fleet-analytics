@@ -1,3 +1,11 @@
+"""
+Интеграционные тесты API.
+
+Запускаются против реального поднятого контейнера app.
+Проверяют основные сценарии: health, webhooks, синхронизацию,
+аналитические витрины, mock-сервисы, scheduler и data-quality.
+"""
+
 import requests
 
 BASE_URL = "http://localhost:8000"
@@ -5,12 +13,14 @@ SECRET_TOKEN = "demo-token-change-in-prod"
 
 
 def test_health():
+    """Проверяет, что API жив."""
     response = requests.get(f"{BASE_URL}/health")
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
 
 
 def test_webhook_bitrix24():
+    """Webhook из Битрикс24 с правильным токеном принимается."""
     payload = {"event": "ONCRMDEALUPDATE", "data": {"FIELDS": {"ID": "123"}}}
     response = requests.post(
         f"{BASE_URL}/webhooks/bitrix24",
@@ -22,7 +32,8 @@ def test_webhook_bitrix24():
 
 
 def test_webhook_uis():
-    payload = {"event": "call_finished", "call_id": "call-test", "phone": "+79990000000"}
+    """Webhook из UIS с правильным токеном принимается."""
+    payload = {"event": "call_finished", "call_id": "call-test", "phone": "+799****0000"}
     response = requests.post(
         f"{BASE_URL}/webhooks/uis",
         json=payload,
@@ -33,6 +44,7 @@ def test_webhook_uis():
 
 
 def test_webhook_1c():
+    """Webhook из 1С с правильным токеном принимается."""
     payload = {"event": "order_updated", "order_id": "order-1"}
     response = requests.post(
         f"{BASE_URL}/webhooks/1c",
@@ -44,6 +56,7 @@ def test_webhook_1c():
 
 
 def test_webhook_without_token_is_rejected():
+    """Webhook без токена должен быть отклонён."""
     payload = {"event": "ONCRMDEALUPDATE"}
     response = requests.post(f"{BASE_URL}/webhooks/bitrix24", json=payload)
     assert response.status_code == 200
@@ -51,12 +64,14 @@ def test_webhook_without_token_is_rejected():
 
 
 def test_sync_state():
+    """Эндпоинт /sync/state возвращает список состояний синхронизации."""
     response = requests.get(f"{BASE_URL}/sync/state")
     assert response.status_code == 200
     assert isinstance(response.json(), list)
 
 
 def test_sync_generate_is_idempotent():
+    """Повторный вызов /sync/generate без force возвращает те же данные."""
     first = requests.post(f"{BASE_URL}/sync/generate").json()
     second = requests.post(f"{BASE_URL}/sync/generate").json()
     assert first == second
@@ -66,6 +81,7 @@ def test_sync_generate_is_idempotent():
 
 
 def test_sync_generate_force():
+    """Перегенерация через force=true возвращает ожидаемые объёмы."""
     response = requests.post(f"{BASE_URL}/sync/generate?force=true")
     assert response.status_code == 200
     data = response.json()
@@ -73,12 +89,14 @@ def test_sync_generate_force():
 
 
 def test_analytics_recalc():
+    """Пересчёт витрин завершается успешно."""
     response = requests.post(f"{BASE_URL}/analytics/recalc")
     assert response.status_code == 200
     assert response.json()["ok"] is True
 
 
 def test_analytics_vehicle_efficiency():
+    """Витрина vehicle-efficiency содержит ожидаемые поля."""
     response = requests.get(f"{BASE_URL}/analytics/vehicle-efficiency")
     assert response.status_code == 200
     data = response.json()
@@ -90,6 +108,7 @@ def test_analytics_vehicle_efficiency():
 
 
 def test_analytics_call_conversion():
+    """Витрина call-conversion содержит ожидаемые поля."""
     response = requests.get(f"{BASE_URL}/analytics/call-conversion")
     assert response.status_code == 200
     data = response.json()
@@ -100,6 +119,7 @@ def test_analytics_call_conversion():
 
 
 def test_analytics_order_profitability():
+    """Витрина order-profitability содержит ожидаемые поля."""
     response = requests.get(f"{BASE_URL}/analytics/order-profitability")
     assert response.status_code == 200
     data = response.json()
@@ -110,6 +130,7 @@ def test_analytics_order_profitability():
 
 
 def test_analytics_vehicle_downtime():
+    """Витрина vehicle-downtime содержит ожидаемые поля."""
     response = requests.get(f"{BASE_URL}/analytics/vehicle-downtime")
     assert response.status_code == 200
     data = response.json()
@@ -119,6 +140,7 @@ def test_analytics_vehicle_downtime():
 
 
 def test_analytics_vehicle_fuel_efficiency():
+    """Витрина vehicle-fuel-efficiency содержит ожидаемые поля."""
     response = requests.get(f"{BASE_URL}/analytics/vehicle-fuel-efficiency")
     assert response.status_code == 200
     data = response.json()
@@ -128,6 +150,7 @@ def test_analytics_vehicle_fuel_efficiency():
 
 
 def test_analytics_customer_ltv():
+    """Витрина customer-ltv содержит ожидаемые поля."""
     response = requests.get(f"{BASE_URL}/analytics/customer-ltv")
     assert response.status_code == 200
     data = response.json()
@@ -137,6 +160,7 @@ def test_analytics_customer_ltv():
 
 
 def test_analytics_calculations():
+    """Эндпоинт /analytics/calculations возвращает все формулы."""
     response = requests.get(f"{BASE_URL}/analytics/calculations")
     assert response.status_code == 200
     data = response.json()
@@ -149,6 +173,7 @@ def test_analytics_calculations():
 
 
 def test_mock_bitrix_deals():
+    """Mock-эндпоинт сделок возвращает список."""
     response = requests.get(f"{BASE_URL}/mock/bitrix/deals")
     assert response.status_code == 200
     data = response.json()
@@ -158,6 +183,7 @@ def test_mock_bitrix_deals():
 
 
 def test_mock_uis_calls():
+    """Mock-эндпоинт звонков возвращает список."""
     response = requests.get(f"{BASE_URL}/mock/uis/calls")
     assert response.status_code == 200
     data = response.json()
@@ -167,6 +193,7 @@ def test_mock_uis_calls():
 
 
 def test_mock_1c_vehicles():
+    """Mock-эндпоинт автомобилей возвращает список."""
     response = requests.get(f"{BASE_URL}/mock/1c/vehicles")
     assert response.status_code == 200
     data = response.json()
@@ -176,6 +203,7 @@ def test_mock_1c_vehicles():
 
 
 def test_scheduler_all():
+    """Scheduler запускает синхронизацию трёх источников."""
     response = requests.post(f"{BASE_URL}/scheduler/all")
     assert response.status_code == 200
     data = response.json()
@@ -184,6 +212,7 @@ def test_scheduler_all():
 
 
 def test_data_quality():
+    """Data-quality возвращает сводку с ожидаемыми проверками."""
     response = requests.get(f"{BASE_URL}/data-quality/")
     assert response.status_code == 200
     data = response.json()

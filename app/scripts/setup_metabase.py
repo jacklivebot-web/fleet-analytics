@@ -1,3 +1,11 @@
+"""
+Скрипт автоматической настройки Metabase.
+
+Создаёт администратора, подключение к БД Fleet Analytics,
+коллекцию, 21 карточку (question) и дашборд Fleet Analytics MVP.
+Запускается внутри контейнера app после старта стека.
+"""
+
 import requests
 import time
 import os
@@ -8,6 +16,7 @@ PASSWORD = "FleetAnalytics123!"
 
 
 def setup_metabase():
+    """Настраивает Metabase при первом запуске или возвращает сессию."""
     props = requests.get(f"{BASE}/api/session/properties").json()
     token = props.get("setup-token")
 
@@ -55,6 +64,7 @@ def setup_metabase():
 
 
 def login():
+    """Авторизуется в Metabase и возвращает токен сессии."""
     r = requests.post(f"{BASE}/api/session", json={"username": EMAIL, "password": PASSWORD})
     if r.status_code != 200:
         print("Login failed:", r.status_code, r.text[:300])
@@ -63,13 +73,18 @@ def login():
 
 
 def create_dashboard(token):
+    """Создаёт дашборд с 21 визуализацией."""
     headers = {"X-Metabase-Session": token}
 
-    # Collection
-    r = requests.post(f"{BASE}/api/collection", headers=headers, json={"name": "Fleet Analytics", "color": "#509EE3"})
+    # Коллекция
+    r = requests.post(
+        f"{BASE}/api/collection",
+        headers=headers,
+        json={"name": "Fleet Analytics", "color": "#509EE3"},
+    )
     collection_id = r.json().get("id", 5)
 
-    # Cards
+    # Все вопросы для дашборда
     questions = [
         {
             "name": "Прибыльность автомобилей",
@@ -205,7 +220,7 @@ select 'Выданы', count(distinct o.deal_id) from transport_orders o where o
         },
     ]
 
-    # Find or create database connection
+    # Ищем или создаём подключение к БД
     databases = requests.get(f"{BASE}/api/database", headers=headers).json().get("data", [])
     db_conn = next((d for d in databases if d["name"] == "Fleet Analytics DB"), None)
     if db_conn:
@@ -231,11 +246,12 @@ select 'Выданы', count(distinct o.deal_id) from transport_orders o where o
         r = requests.post(f"{BASE}/api/database", headers=headers, json=payload)
         database_id = r.json()["id"]
 
-    # Sync schema
+    # Синхронизируем схему
     requests.post(f"{BASE}/api/database/{database_id}/sync", headers=headers)
     requests.post(f"{BASE}/api/database/{database_id}/rescan_values", headers=headers)
     time.sleep(2)
 
+    # Создаём карточки
     cards = []
     for q in questions:
         payload = {
@@ -255,7 +271,7 @@ select 'Выданы', count(distinct o.deal_id) from transport_orders o where o
         else:
             print(f"Failed to create card {q['name']}:", r.status_code, r.text[:200])
 
-    # Dashboard
+    # Создаём дашборд
     r = requests.post(
         f"{BASE}/api/dashboard",
         headers=headers,
@@ -263,9 +279,11 @@ select 'Выданы', count(distinct o.deal_id) from transport_orders o where o
     )
     dashboard_id = r.json()["id"]
 
-    # Add cards via PUT /api/dashboard/:id with dashcards list (Metabase v0.63)
+    # Раскладываем карточки на дашборде
     dashboard_cards = []
     for i, card_id in enumerate(cards):
+        size_y = 8 if questions[i]["display"] == "table" else 4
+        size_x = 12 if questions[i]["display"] == "table" else 8
         dashboard_cards.append(
             {
                 "id": -i - 1,
@@ -273,8 +291,8 @@ select 'Выданы', count(distinct o.deal_id) from transport_orders o where o
                 "dashboard_id": dashboard_id,
                 "row": (i // 2) * 4,
                 "col": (i % 2) * 8,
-                "size_x": 12 if questions[i]["display"] == "table" else 8,
-                "size_y": 8 if questions[i]["display"] == "table" else 4,
+                "size_x": size_x,
+                "size_y": size_y,
                 "series": [],
                 "parameter_mappings": [],
                 "visualization_settings": {},
@@ -291,7 +309,7 @@ select 'Выданы', count(distinct o.deal_id) from transport_orders o where o
     if r.status_code != 200:
         print("Dashboard cards update failed:", r.status_code, r.text[:300])
 
-    # Public link
+    # Публичная ссылка
     r = requests.post(f"{BASE}/api/dashboard/{dashboard_id}/public_link", headers=headers)
     public_uuid = r.json().get("uuid")
 

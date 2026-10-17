@@ -1,13 +1,21 @@
+"""
+Mock-роутеры для имитации внешних систем.
+
+Используются в MVP как замена реальных API Битрикс24, UIS и 1С.
+Позволяют фронтенду и тестам получать данные в том же формате,
+в каком их бы отдавали реальные интеграции.
+"""
+
 from fastapi import APIRouter
-from models import AsyncSessionLocal, CRMContact, CRMDeal, Call, Vehicle, Driver, TransportOrder
+from models import AsyncSessionLocal, CRMContact, CRMDeal, Call, Vehicle, TransportOrder
 from sqlalchemy import select
-from datetime import datetime, timezone
-import random
 
 router = APIRouter()
 
+
 @router.get("/bitrix/deals")
 async def mock_bitrix_deals():
+    """Возвращает до 10 последних сделок в формате, похожем на Битрикс24."""
     async with AsyncSessionLocal() as db:
         result = await db.execute(select(CRMDeal).limit(10))
         rows = result.scalars().all()
@@ -23,8 +31,10 @@ async def mock_bitrix_deals():
         for r in rows
     ]
 
+
 @router.get("/bitrix/contacts")
 async def mock_bitrix_contacts():
+    """Возвращает до 10 последних контактов в формате Битрикс24."""
     async with AsyncSessionLocal() as db:
         result = await db.execute(select(CRMContact).limit(10))
         rows = result.scalars().all()
@@ -38,8 +48,10 @@ async def mock_bitrix_contacts():
         for r in rows
     ]
 
+
 @router.get("/uis/calls")
 async def mock_uis_calls():
+    """Возвращает до 20 последних звонков в формате UIS."""
     async with AsyncSessionLocal() as db:
         result = await db.execute(select(Call).limit(20))
         rows = result.scalars().all()
@@ -55,8 +67,10 @@ async def mock_uis_calls():
         for r in rows
     ]
 
+
 @router.get("/1c/vehicles")
 async def mock_1c_vehicles():
+    """Возвращает до 20 последних автомобилей в формате 1С."""
     async with AsyncSessionLocal() as db:
         result = await db.execute(select(Vehicle).limit(20))
         rows = result.scalars().all()
@@ -71,8 +85,10 @@ async def mock_1c_vehicles():
         for r in rows
     ]
 
+
 @router.get("/1c/orders")
 async def mock_1c_orders():
+    """Возвращает до 20 последних заказов в формате 1С."""
     async with AsyncSessionLocal() as db:
         result = await db.execute(select(TransportOrder).limit(20))
         rows = result.scalars().all()
