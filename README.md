@@ -124,6 +124,11 @@ fleet-analytics/
 ├── CASES.md                         # разбор задач вакансии
 ├── PORTFOLIO.md                     # кейс-стадио для портфолио
 ├── DATA_DICTIONARY.md               # описание таблиц и полей
+├── docs/
+│   └── images/
+│       ├── dashboard-1.png          # скриншоты дашборда Metabase
+│       ├── dashboard-2.png
+│       └── dashboard-3.png
 └── .gitignore
 ```
 
@@ -227,7 +232,24 @@ docker compose exec app python -m pytest tests/test_api.py -v
 - `CASES.md` — разбор задач из вакансии, которые закрывает проект.
 - `PORTFOLIO.md` — короткое кейс-стадио, которое можно вставить в портфолио.
 - `DATA_DICTIONARY.md` — полное описание таблиц, полей и связей БД.
+- `docs/images/dashboard-*.png` — скриншоты дашборда Metabase.
 
 ## Автор
 
-Jack — аналитик данных / BI-аналитик. Проект делал для себя, чтобы показать, как я подхожу к данным: от источников до дашборда.
+Jack — аналитик данных / BI-аналитик.
+
+## Скриншоты дашборда Metabase
+
+Публичный дашборд локального запуска: http://localhost:3000/public/dashboard/764fac8d-e9c3-4ce9-a8a5-d771ffc48ac8
+
+### Верхняя часть: прибыльность ТС, конверсия звонков, воронка, загрузка парка
+
+![dashboard-1](docs/images/dashboard-1.png)
+
+### Средняя часть: воронка по этапам, доходность моделей, убыточные заказы, простой
+
+![dashboard-2](docs/images/dashboard-2.png)
+
+### Нижняя часть: тренд заказов, расход топлива, LTV, ремонты, заправки
+
+![dashboard-3](docs/images/dashboard-3.png)
